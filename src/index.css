@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+/* 隱藏 React Flow 右下角的 Logo 連結 */
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* 自定義畫布控制按鈕顏色 (放大/縮小/適應視窗) */
+.react-flow__controls {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid #3f3f46 !important; /* zinc-700 */
+}
+
+.react-flow__controls-button {
+  background-color: #18181b !important; /* zinc-900 */
+  border-bottom: 1px solid #27272a !important; /* zinc-800 */
+  fill: #a1a1aa !important; /* zinc-400 */
+  transition: all 0.2s ease !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: #27272a !important; /* zinc-800 */
+  fill: #818cf8 !important; /* indigo-400 */
+}
+
+.react-flow__controls-button svg {
+  width: 14px !important;
+  height: 14px !important;
+}
