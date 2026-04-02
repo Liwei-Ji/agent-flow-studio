@@ -52,13 +52,13 @@ export function Agent({ data, selected }: NodeProps<Node<BaseNodeData>>) {
       )}
     >
       <Handle type="target" position={Position.Left} className="w-4 h-4 bg-zinc-400 border-2 border-zinc-800 hover:scale-125 hover:bg-indigo-400 transition-transform" />
-      
+
       {/* Retry Input (Top) */}
-      <Handle 
-        type="target" 
-        position={Position.Top} 
-        id="loop-return" 
-        className="w-4 h-4 bg-orange-500 border-2 border-zinc-800 hover:scale-125 transition-transform group" 
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="loop-return"
+        className="w-4 h-4 bg-orange-500 border-2 border-zinc-800 hover:scale-125 transition-transform group"
       >
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 pointer-events-none">
           <span className="text-[10px] font-bold text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase whitespace-nowrap">Retry In</span>
@@ -69,12 +69,12 @@ export function Agent({ data, selected }: NodeProps<Node<BaseNodeData>>) {
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-700/50 text-indigo-400">
           <Bot className="w-5 h-5" />
         </div>
-        
+
         <div className="flex-1">
           <div className="text-sm font-medium">{data.label}</div>
           <div className="text-xs opacity-70">Agent</div>
         </div>
-        
+
         <StatusIcon status={data.status} />
       </div>
 
@@ -83,7 +83,7 @@ export function Agent({ data, selected }: NodeProps<Node<BaseNodeData>>) {
           {data.description}
         </div>
       )}
-      
+
       <Handle type="source" position={Position.Right} className="w-4 h-4 bg-zinc-400 border-2 border-zinc-800 hover:scale-125 hover:bg-indigo-400 transition-transform" />
     </div>
   );

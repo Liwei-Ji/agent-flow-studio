@@ -15,7 +15,7 @@ import {
   Panel,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Save, Upload } from 'lucide-react';
+import { Save, Upload, Settings as SettingsIcon } from 'lucide-react';
 
 import { Agent } from './nodes/Agent';
 import { LLM } from './nodes/LLM';
@@ -35,6 +35,9 @@ import { PropertiesPanel } from './PropertiesPanel';
 import { ContextMenu } from './ContextMenu';
 import { DeletableEdge } from './edges/DeletableEdge';
 import { SettingsModal, SettingsData } from './SettingsModal';
+import { Toolbar } from './Toolbar';
+import { TemplateModal } from './TemplateModal';
+import { TEMPLATES, WorkflowTemplate } from '../lib/templates';
 
 const SETTINGS_STORAGE_KEY = 'agent-flow-settings';
 const DEFAULT_SETTINGS: SettingsData = {
@@ -104,6 +107,7 @@ function Flow() {
   const [menu, setMenu] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
 
   // Load settings on mount
@@ -337,6 +341,22 @@ function Flow() {
     event.target.value = '';
   }, [setNodes, setEdges, setViewport]);
 
+  const handleClear = useCallback(() => {
+    if (nodes.length > 0 && window.confirm('Are you sure you want to clear the entire canvas?')) {
+      setNodes([]);
+      setEdges([]);
+    }
+  }, [nodes, setNodes, setEdges]);
+
+  const handleApplyTemplate = useCallback((template: WorkflowTemplate) => {
+    if (nodes.length > 0 && !window.confirm('Applying a template will replace your current workflow. Proceed?')) {
+      return;
+    }
+    setNodes(template.nodes);
+    setEdges(template.edges);
+    setShowTemplates(false);
+  }, [nodes, setNodes, setEdges]);
+
   return (
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-200 overflow-hidden font-sans">
       <Sidebar
@@ -375,31 +395,24 @@ function Flow() {
           {settings.showGrid && (
             <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#3f3f46" />
           )}
-          <Controls className="bg-zinc-800 border-zinc-700 fill-zinc-300" />
+          <Controls className="bg-zinc-800 border-zinc-700 fill-zinc-300 pointer-events-auto" />
 
-          <Panel position="top-right" className="flex gap-2 m-4">
-            <input
-              type="file"
-              accept=".json"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-            />
+          {/* Hidden input for loading files */}
+          <input
+            type="file"
+            accept=".json"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          <Panel position="top-right" className="flex gap-2 m-4 pointer-events-auto">
             <button
-              onClick={handleLoadClick}
-              className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-md shadow-lg transition-colors text-sm font-medium"
-              title="Import Workflow"
+              onClick={() => setShowSettings(true)}
+              className="p-2.5 bg-zinc-900/80 backdrop-blur-md border border-zinc-700/50 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all shadow-xl group relative"
+              title="Settings"
             >
-              <Upload className="w-4 h-4" />
-              Load
-            </button>
-            <button
-              onClick={handleSave}
-              className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500 rounded-md shadow-lg transition-colors text-sm font-medium"
-              title="Export Workflow"
-            >
-              <Save className="w-4 h-4" />
-              Save
+              <SettingsIcon className="w-5 h-5 transition-transform group-hover:rotate-90 duration-500" />
             </button>
           </Panel>
         </ReactFlow>
@@ -434,6 +447,19 @@ function Flow() {
         onClose={() => setShowSettings(false)}
         settings={settings}
         onUpdate={updateSettings}
+      />
+
+      <Toolbar
+        onImport={handleLoadClick}
+        onExport={handleSave}
+        onOpenTemplates={() => setShowTemplates(true)}
+        onClear={handleClear}
+      />
+
+      <TemplateModal
+        isOpen={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onSelect={handleApplyTemplate}
       />
     </div>
   );

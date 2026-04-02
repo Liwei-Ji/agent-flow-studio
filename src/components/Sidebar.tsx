@@ -109,21 +109,6 @@ export function Sidebar({ isOpen, onToggle, onOpenSettings }: SidebarProps) {
           </div>
         </div>
 
-        {/* Settings Button - Bottom Fixed */}
-        <div className="pt-2 border-t border-zinc-800/50">
-          <button
-            onClick={onOpenSettings}
-            className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-zinc-950/40 border border-zinc-700/50 hover:bg-zinc-800/80 transition-all group"
-          >
-            <div className="w-7 h-7 rounded-lg bg-zinc-800 text-zinc-400 group-hover:text-indigo-400 flex items-center justify-center transition-colors">
-              <Settings className="w-4 h-4" />
-            </div>
-            <div className="text-left">
-              <div className="text-[13px] font-medium text-zinc-200">Settings</div>
-              <div className="text-[10px] text-zinc-500">Configure Flow Studio</div>
-            </div>
-          </button>
-        </div>
       </aside>
 
       {/* Toggle Button */}

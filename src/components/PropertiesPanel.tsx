@@ -190,16 +190,16 @@ export function PropertiesPanel({ node, onClose, onUpdate, onDelete, onDuplicate
           </div>
         )}
       </div>
-      
+
       <div className="p-4 border-t border-zinc-800 flex flex-col gap-2">
-        <button 
+        <button
           onClick={() => onDuplicate(node.id)}
           className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-md transition-colors text-sm font-medium"
         >
           <Copy className="w-4 h-4" />
           Copy
         </button>
-        <button 
+        <button
           onClick={() => onDelete(node.id)}
           className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-md transition-colors text-sm font-medium"
         >

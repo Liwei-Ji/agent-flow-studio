@@ -43,13 +43,13 @@ export function LLM({ data, selected }: NodeProps<Node<BaseNodeData>>) {
       )}
     >
       <Handle type="target" position={Position.Left} className="w-5 h-5 bg-zinc-400 border-2 border-zinc-800 hover:scale-125 hover:bg-purple-400 transition-transform" />
-      
+
       {/* Retry Input (Top) */}
-      <Handle 
-        type="target" 
-        position={Position.Top} 
-        id="loop-return" 
-        className="w-4 h-4 bg-orange-500 border-2 border-zinc-800 hover:scale-125 transition-transform group" 
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="loop-return"
+        className="w-4 h-4 bg-orange-500 border-2 border-zinc-800 hover:scale-125 transition-transform group"
       >
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 pointer-events-none">
           <span className="text-[10px] font-bold text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase whitespace-nowrap">Retry In</span>
@@ -59,22 +59,22 @@ export function LLM({ data, selected }: NodeProps<Node<BaseNodeData>>) {
       <div className="flex items-center justify-center text-purple-400">
         <Cpu className="w-8 h-8" />
       </div>
-      
+
       <div className="text-center px-2">
         <div className="text-sm font-medium truncate w-full">{data.label}</div>
         <div className="text-xs opacity-70">LLM</div>
       </div>
-      
+
       {data.description && (
         <div className="text-[10px] text-zinc-400 truncate w-[100px] text-center" title={data.description}>
           {data.description}
         </div>
       )}
-      
+
       <div className="absolute top-2 right-4">
         <StatusIcon status={data.status} />
       </div>
-      
+
       <Handle type="source" position={Position.Right} className="w-5 h-5 bg-zinc-400 border-2 border-zinc-800 hover:scale-125 hover:bg-purple-400 transition-transform" />
     </div>
   );
