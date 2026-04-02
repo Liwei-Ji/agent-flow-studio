@@ -2,15 +2,24 @@
 
 **Agent Flow Studio** is a visual diagramming tool built on React Flow, developed for mapping LLM applications, agent architectures, and complex logic workflows.
 
-No backend or database required start planning your architecture directly in the browser.
+No backend or database required start planning your architecture directly in the browser with a **Security First** approach.
 
-### Key Features
+## Key Features
 
-*   **Custom Nodes**: Built-in specialized nodes for LLM workflows, including Agent, LLM, Tool, RAG, MCP, and Conditions.
-*   **Interactive Canvas**: Fluid drag and drop, context menus, and node management (copy/delete).
-*   **Property Panel**: Edit node parameters like System Prompts, names, and status (Pending/Running/Completed) in real-time.
-*   **Local Persistence**: Export and import workflows as `.json` files. 100% offline with full data privacy.
-*   **Modern UI**: Built with Tailwind CSS, featuring a dark mode interface for focused editing.
+*   **Visual Workflow Designer**: Fluid drag-and-drop interface for building complex AI logic.
+*   **AI-First Components**: Specialized nodes for Agents, LLMs (OpenAI/Gemini), RAG, and more.
+*   **Multi-Provider Support**: Seamlessly switch between Gemini and OpenAI for your simulations.
+*   **Global Settings**: Toggle Grid, Snap to Grid, and manage API keys in one unified panel.
+*   **Local Persistence**: Export and import workflows as `.json` files. 100% data ownership.
+
+## Security & Privacy (Local-First)
+
+Agent Flow Studio is designed around user privacy and data security. Unlike other cloud-based tools, we prioritize a **Local-First** philosophy:
+
+- **Browser-Only Storage**: All configuration, including your **Gemini and OpenAI API Keys**, is stored exclusively in your current browser's `localStorage`.
+- **Zero Server Overhead**: The application is a static client-side tool. Your sensitive keys and workflow data are **never** transmitted to any third-party server other than the official AI model providers.
+- **Direct Communication**: Execution requests are sent directly from your browser to the AI service (Google/OpenAI).
+- **Transparent Management**: You can reset, clear, or update your local configuration at any time via the "Settings" panel in the sidebar.
 
 ## Preview
 
