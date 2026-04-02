@@ -34,6 +34,15 @@ import { Sidebar } from './Sidebar';
 import { PropertiesPanel } from './PropertiesPanel';
 import { ContextMenu } from './ContextMenu';
 import { DeletableEdge } from './edges/DeletableEdge';
+import { SettingsModal, SettingsData } from './SettingsModal';
+
+const SETTINGS_STORAGE_KEY = 'agent-flow-settings';
+const DEFAULT_SETTINGS: SettingsData = {
+  openaiKey: '',
+  geminiKey: '',
+  snapToGrid: true,
+  showGrid: true,
+};
 
 const nodeTypes = {
   agent: Agent,
@@ -94,13 +103,33 @@ function Flow() {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [menu, setMenu] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
+
+  // Load settings on mount
+  React.useEffect(() => {
+    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (saved) {
+      try {
+        setSettings(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load settings', e);
+      }
+    }
+  }, []);
+
+  // Save settings on change
+  const updateSettings = (newSettings: SettingsData) => {
+    setSettings(newSettings);
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+  };
 
   const onConnect = useCallback(
     (params: Connection) => {
       const sourceNode = nodes.find((n) => n.id === params.source);
       const isRunning = sourceNode?.data.status === 'running';
       const isLoopRetry = params.sourceHandle === 'loop-return';
-      
+
       const newEdge = {
         ...params,
         type: 'deletable',
@@ -208,10 +237,10 @@ function Flow() {
           return node;
         })
       );
-      
+
       // Update edges animation if status changes
       if (data.status) {
-        setEdges((eds) => 
+        setEdges((eds) =>
           eds.map((edge) => {
             if (edge.source === nodeId) {
               const isRunning = data.status === 'running';
@@ -266,7 +295,7 @@ function Flow() {
     const jsonString = JSON.stringify(flow, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = 'agent-workflow.json';
@@ -303,15 +332,19 @@ function Flow() {
       }
     };
     reader.readAsText(file);
-    
+
     // Reset input so the same file can be loaded again if needed
     event.target.value = '';
   }, [setNodes, setEdges, setViewport]);
 
   return (
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-200 overflow-hidden font-sans">
-      <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-      
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        onOpenSettings={() => setShowSettings(true)}
+      />
+
       <div className="flex-1 relative w-full h-full" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
@@ -331,7 +364,7 @@ function Flow() {
           className="bg-zinc-950"
           minZoom={0.1}
           maxZoom={2}
-          snapToGrid={true}
+          snapToGrid={settings.snapToGrid}
           snapGrid={[24, 24]}
           connectionRadius={40}
           defaultEdgeOptions={{
@@ -339,9 +372,11 @@ function Flow() {
             type: 'deletable',
           }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#3f3f46" />
+          {settings.showGrid && (
+            <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#3f3f46" />
+          )}
           <Controls className="bg-zinc-800 border-zinc-700 fill-zinc-300" />
-          
+
           <Panel position="top-right" className="flex gap-2 m-4">
             <input
               type="file"
@@ -393,6 +428,13 @@ function Flow() {
           onDuplicate={handleDuplicate}
         />
       )}
+
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={settings}
+        onUpdate={updateSettings}
+      />
     </div>
   );
 }
