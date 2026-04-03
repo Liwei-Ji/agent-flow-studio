@@ -67,8 +67,8 @@ export function TemplateModal({ isOpen, onClose, onSelect }: TemplateModalProps)
                                     <LayoutGrid className="w-7 h-7 text-indigo-400" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-bold text-zinc-100 uppercase tracking-tight">Workflow Registry</h2>
-                                    <p className="text-sm text-zinc-500 font-medium">Select a blueprint to begin your architecture</p>
+                                    <h2 className="text-2xl font-bold text-zinc-100 uppercase tracking-tight">Workflow</h2>
+                                    <p className="text-sm text-zinc-500 font-medium">Choose a template to get started</p>
                                 </div>
                             </div>
                             <button

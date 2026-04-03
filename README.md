@@ -21,9 +21,11 @@ Agent Flow Studio is designed around user privacy and data security. Unlike othe
 - **Direct Communication**: Execution requests are sent directly from your browser to the AI service (Google/OpenAI).
 - **Transparent Management**: You can reset, clear, or update your local configuration at any time via the "Settings" panel in the sidebar.
 
-## Preview
+### User Interface
+![User Interface](./assets/demo.png)
 
-![Demo Screenshot](./assets/demo.png)
+### Template
+![Template](./assets/template.png)
 
 ## Quick Start
 
