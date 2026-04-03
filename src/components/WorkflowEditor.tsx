@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -13,9 +13,12 @@ import {
   Node,
   useReactFlow,
   Panel,
+  MiniMap,
+  ConnectionLineType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Save, Upload, Settings as SettingsIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 import { Agent } from './nodes/Agent';
 import { LLM } from './nodes/LLM';
@@ -35,9 +38,11 @@ import { PropertiesPanel } from './PropertiesPanel';
 import { ContextMenu } from './ContextMenu';
 import { DeletableEdge } from './edges/DeletableEdge';
 import { SettingsModal, SettingsData } from './SettingsModal';
-import { Toolbar } from './Toolbar';
+import { Toolbar, Tooltip } from './Toolbar';
 import { TemplateModal } from './TemplateModal';
+import { ChatPanel } from './ChatPanel';
 import { TEMPLATES, WorkflowTemplate } from '../lib/templates';
+import { v4 as uuidv4 } from 'uuid';
 
 const SETTINGS_STORAGE_KEY = 'agent-flow-settings';
 const DEFAULT_SETTINGS: SettingsData = {
@@ -65,6 +70,11 @@ const nodeTypes = {
 
 const edgeTypes = {
   deletable: DeletableEdge,
+};
+
+const defaultEdgeOptions = {
+  style: { strokeWidth: 2, stroke: '#71717a' },
+  type: 'deletable',
 };
 
 const initialNodes: Node[] = [
@@ -99,6 +109,7 @@ const getId = () => `${id++}`;
 function Flow() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const reactFlowInstance = useRef<any>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition, toObject, setViewport } = useReactFlow();
@@ -108,6 +119,9 @@ function Flow() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [isRuntimeMode, setIsRuntimeMode] = useState(false);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
   const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
 
   // Load settings on mount
@@ -128,6 +142,7 @@ function Flow() {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
   };
 
+  // Save settings on change
   const onConnect = useCallback(
     (params: Connection) => {
       const sourceNode = nodes.find((n) => n.id === params.source);
@@ -342,7 +357,7 @@ function Flow() {
   }, [setNodes, setEdges, setViewport]);
 
   const handleClear = useCallback(() => {
-    if (nodes.length > 0 && window.confirm('Are you sure you want to clear the entire canvas?')) {
+    if (nodes.length > 0 && window.confirm('Sure you want to clear the canvas?')) {
       setNodes([]);
       setEdges([]);
     }
@@ -357,6 +372,50 @@ function Flow() {
     setShowTemplates(false);
   }, [nodes, setNodes, setEdges]);
 
+  const toggleRuntimeMode = useCallback(() => {
+    setIsRuntimeMode(prev => !prev);
+    if (!isRuntimeMode) {
+      // Entering runtime: Reset any previous execution status if needed
+      setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, status: 'pending' } })));
+    }
+  }, [isRuntimeMode, setNodes]);
+
+  const handleSendMessage = useCallback(async (content: string) => {
+    const userMsg = {
+      id: uuidv4(),
+      role: 'user',
+      content,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setIsChatLoading(true);
+
+    // MOCK EXECUTION FLOW ANIMATION
+    // 1. Highlight Input Node
+    setNodes(nds => nds.map(n => n.type === 'Input' ? { ...n, data: { ...n.data, status: 'running' } } : n));
+    await new Promise(r => setTimeout(r, 1000));
+    setNodes(nds => nds.map(n => n.type === 'Input' ? { ...n, data: { ...n.data, status: 'completed' } } : n));
+
+    // 2. Highlight Processing Nodes (LLM, RAG, etc.)
+    setNodes(nds => nds.map(n => ['llm', 'rag', 'agent'].includes(n.type || '') ? { ...n, data: { ...n.data, status: 'running' } } : n));
+    await new Promise(r => setTimeout(r, 2000));
+    setNodes(nds => nds.map(n => ['llm', 'rag', 'agent'].includes(n.type || '') ? { ...n, data: { ...n.data, status: 'completed' } } : n));
+
+    // 3. Highlight Output Node
+    setNodes(nds => nds.map(n => n.type === 'Output' ? { ...n, data: { ...n.data, status: 'running' } } : n));
+    await new Promise(r => setTimeout(r, 800));
+    setNodes(nds => nds.map(n => n.type === 'Output' ? { ...n, data: { ...n.data, status: 'completed' } } : n));
+
+    const assistantMsg = {
+      id: uuidv4(),
+      role: 'assistant',
+      content: "I've processed your request through the workflow. The output has been generated based on the current configuration.",
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, assistantMsg]);
+    setIsChatLoading(false);
+  }, [setNodes]);
+
   return (
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-200 overflow-hidden font-sans">
       <Sidebar
@@ -365,77 +424,81 @@ function Flow() {
         onOpenSettings={() => setShowSettings(true)}
       />
 
-      <div className="flex-1 relative w-full h-full" ref={reactFlowWrapper}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onNodeClick={onNodeClick}
-          onPaneClick={onPaneClick}
-          onNodeContextMenu={onNodeContextMenu}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          fitView
-          fitViewOptions={{ padding: 0.5, maxZoom: 0.8 }}
-          className="bg-zinc-950"
-          minZoom={0.1}
-          maxZoom={2}
-          snapToGrid={settings.snapToGrid}
-          snapGrid={[24, 24]}
-          connectionRadius={40}
-          defaultEdgeOptions={{
-            style: { strokeWidth: 2, stroke: '#71717a' },
-            type: 'deletable',
+      <main className="flex-1 relative overflow-hidden flex">
+        {/* React Flow Canvas */}
+        <motion.div
+          layout
+          initial={false}
+          animate={{
+            width: isRuntimeMode ? 'calc(100% - 384px)' : '100%',
           }}
+          transition={{ type: 'spring', damping: 30, stiffness: 200 }}
+          className="h-full relative overflow-hidden"
+          ref={reactFlowWrapper}
         >
-          {settings.showGrid && (
-            <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#3f3f46" />
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onInit={(instance) => reactFlowInstance.current = instance}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
+            onNodeContextMenu={onNodeContextMenu}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={defaultEdgeOptions}
+            connectionLineType={ConnectionLineType.SmoothStep}
+            fitView
+            fitViewOptions={{ padding: 0.5, maxZoom: 0.8 }}
+            className="bg-zinc-950"
+            minZoom={0.1}
+            maxZoom={2}
+            snapToGrid={settings.snapToGrid}
+            snapGrid={[24, 24]}
+            connectionRadius={40}
+          >
+            {settings.showGrid && (
+              <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#3f3f46" />
+            )}
+            <Controls className="bg-zinc-800 border-zinc-700 fill-zinc-300 pointer-events-auto" />
+
+            {/* Hidden input for loading files */}
+            <input
+              type="file"
+              accept=".json"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </ReactFlow>
+
+          {menu && (
+            <ContextMenu
+              {...menu}
+              onDuplicate={handleDuplicate}
+              onDelete={handleDelete}
+              onSettings={(id) => {
+                const node = nodes.find((n) => n.id === id);
+                if (node) setSelectedNode(node);
+              }}
+              onHistory={() => alert('History view not implemented')}
+              onClose={() => setMenu(null)}
+            />
           )}
-          <Controls className="bg-zinc-800 border-zinc-700 fill-zinc-300 pointer-events-auto" />
-
-          {/* Hidden input for loading files */}
-          <input
-            type="file"
-            accept=".json"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-          />
-
-          <Panel position="top-right" className="flex gap-2 m-4 pointer-events-auto">
-            <button
-              onClick={() => setShowSettings(true)}
-              className="p-2.5 bg-zinc-900/80 backdrop-blur-md border border-zinc-700/50 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all shadow-xl group relative"
-              title="Settings"
-            >
-              <SettingsIcon className="w-5 h-5 transition-transform group-hover:rotate-90 duration-500" />
-            </button>
-          </Panel>
-        </ReactFlow>
-
-        {menu && (
-          <ContextMenu
-            {...menu}
-            onDuplicate={handleDuplicate}
-            onDelete={handleDelete}
-            onSettings={(id) => {
-              const node = nodes.find((n) => n.id === id);
-              if (node) setSelectedNode(node);
-            }}
-            onHistory={() => alert('History view not implemented')}
-            onClose={() => setMenu(null)}
-          />
-        )}
-      </div>
+        </motion.div>
+      </main>
 
       {selectedNode && (
         <PropertiesPanel
           node={selectedNode}
-          onClose={() => setSelectedNode(null)}
+          onClose={() => {
+            setSelectedNode(null);
+            setNodes((nds) => nds.map((n) => ({ ...n, selected: false })));
+          }}
           onUpdate={onNodeUpdate}
           onDelete={handleDelete}
           onDuplicate={handleDuplicate}
@@ -454,12 +517,23 @@ function Flow() {
         onExport={handleSave}
         onOpenTemplates={() => setShowTemplates(true)}
         onClear={handleClear}
+        isRuntimeMode={isRuntimeMode}
+        onToggleRuntime={toggleRuntimeMode}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       <TemplateModal
         isOpen={showTemplates}
         onClose={() => setShowTemplates(false)}
         onSelect={handleApplyTemplate}
+      />
+
+      <ChatPanel
+        isOpen={isRuntimeMode}
+        onClose={() => setIsRuntimeMode(false)}
+        onSendMessage={handleSendMessage}
+        messages={messages}
+        isLoading={isChatLoading}
       />
     </div>
   );

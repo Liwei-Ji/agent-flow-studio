@@ -44,7 +44,7 @@ export function PropertiesPanel({ node, onClose, onUpdate, onDelete, onDuplicate
   const nodeInfo = NODE_TYPE_INFO[node.type] || { label: 'Node', description: '' };
 
   return (
-    <div className="w-80 bg-zinc-900 border-l border-zinc-800 flex flex-col h-full shadow-2xl">
+    <div className="absolute right-0 top-0 bottom-0 w-80 bg-zinc-900 border-l border-zinc-800 flex flex-col h-full shadow-2xl z-40">
       <div className="flex items-center justify-between p-4 border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-zinc-200">{nodeInfo.label}</h3>
