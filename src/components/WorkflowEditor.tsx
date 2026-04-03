@@ -110,6 +110,7 @@ function Flow() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reactFlowInstance = useRef<any>(null);
+  const isExecutingRef = useRef<boolean>(false);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition, toObject, setViewport } = useReactFlow();
@@ -373,12 +374,29 @@ function Flow() {
   }, [nodes, setNodes, setEdges]);
 
   const toggleRuntimeMode = useCallback(() => {
-    setIsRuntimeMode(prev => !prev);
-    if (!isRuntimeMode) {
-      // Entering runtime: Reset any previous execution status if needed
-      setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, status: 'pending' } })));
-    }
-  }, [isRuntimeMode, setNodes]);
+    setIsRuntimeMode(prev => {
+      const nextMode = !prev;
+
+      // Stop execution anyway
+      isExecutingRef.current = false;
+
+      // STOP: Only reset visual state when explicitly exiting Runtime mode (clicking Stop)
+      if (!nextMode) {
+        setNodes(nds => nds.map(n => ({
+          ...n,
+          data: { ...n.data, status: 'pending' }
+        })));
+
+        setEdges(eds => eds.map(e => ({
+          ...e,
+          animated: false,
+          style: { ...e.style, stroke: '#71717a' }
+        })));
+      }
+
+      return nextMode;
+    });
+  }, [setNodes, setEdges]);
 
   const handleSendMessage = useCallback(async (content: string) => {
     const userMsg = {
@@ -391,20 +409,33 @@ function Flow() {
     setIsChatLoading(true);
 
     // MOCK EXECUTION FLOW ANIMATION
+    isExecutingRef.current = true;
+
+    // Helper to check if still executing
+    const checkExecuting = () => isExecutingRef.current;
+
     // 1. Highlight Input Node
+    if (!checkExecuting()) return;
     setNodes(nds => nds.map(n => n.type === 'Input' ? { ...n, data: { ...n.data, status: 'running' } } : n));
     await new Promise(r => setTimeout(r, 1000));
+    if (!checkExecuting()) return;
     setNodes(nds => nds.map(n => n.type === 'Input' ? { ...n, data: { ...n.data, status: 'completed' } } : n));
 
     // 2. Highlight Processing Nodes (LLM, RAG, etc.)
+    if (!checkExecuting()) return;
     setNodes(nds => nds.map(n => ['llm', 'rag', 'agent'].includes(n.type || '') ? { ...n, data: { ...n.data, status: 'running' } } : n));
     await new Promise(r => setTimeout(r, 2000));
+    if (!checkExecuting()) return;
     setNodes(nds => nds.map(n => ['llm', 'rag', 'agent'].includes(n.type || '') ? { ...n, data: { ...n.data, status: 'completed' } } : n));
 
     // 3. Highlight Output Node
+    if (!checkExecuting()) return;
     setNodes(nds => nds.map(n => n.type === 'Output' ? { ...n, data: { ...n.data, status: 'running' } } : n));
     await new Promise(r => setTimeout(r, 800));
+    if (!checkExecuting()) return;
     setNodes(nds => nds.map(n => n.type === 'Output' ? { ...n, data: { ...n.data, status: 'completed' } } : n));
+
+    if (!checkExecuting()) return;
 
     const assistantMsg = {
       id: uuidv4(),
